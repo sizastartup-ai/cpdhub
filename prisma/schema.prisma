@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  fullName     String
+  email        String        @unique
+  passwordHash String
+  role         String        @default("Learner")
+  country      String        @default("Kenya")
+  phone        String?       @default("")
+  image        String?       @default("")
+  professionId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  certificates Certificate[]
+  enrollments  Enrollment[]
+  payments     Payment[]
+  progress     Progress[]
+  profession   Profession?   @relation(fields: [professionId], references: [id])
+}
+
+model Profession {
+  id      String   @id @default(uuid())
+  name    String   @unique
+  courses Course[]
+  users   User[]
+}
+
+model Course {
+  id           String        @id @default(uuid())
+  title        String
+  description  String
+  price        Float
+  cpdPoints    Int
+  professionId String
+  image        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  certificates Certificate[]
+  profession   Profession    @relation(fields: [professionId], references: [id])
+  enrollments  Enrollment[]
+  modules      Module[]
+  payments     Payment[]
+  quizzes      Quiz[]
+}
+
+
+model Module {
+  id       String   @id @default(uuid())
+  courseId String
+  title    String
+  videoUrl String?  @default("")
+  order    Int
+  lessons  Lesson[]
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes  Quiz[]
+  progress Progress[]
+  resources Resource[]
+}
+
+model Resource {
+  id        String   @id @default(uuid())
+  moduleId  String
+  title     String
+  type      String   // PDF, Presentation, Image, etc.
+  url       String
+  createdAt DateTime @default(now())
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+
+model Lesson {
+  id          String     @id @default(uuid())
+  moduleId    String
+  title       String
+  contentType String
+  contentUrl  String
+  order       Int
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress    Progress[]
+}
+
+model Quiz {
+  id        String     @id @default(uuid())
+  moduleId  String?
+  courseId  String?
+  title     String
+  passMark  Int        @default(70)
+  questions Question[]
+  module    Module?    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  course    Course?    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Question {
+  id            String @id @default(uuid())
+  quizId        String
+  text          String
+  type          String
+  options       String
+  correctAnswer String
+  quiz          Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model Enrollment {
+  id          String    @id @default(uuid())
+  userId      String
+  courseId    String
+  status      String    @default("Enrolled")
+  progress    Float     @default(0)
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Progress {
+  id          String   @id @default(uuid())
+  userId      String
+  lessonId    String?
+  moduleId    String?
+  completed   Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+  lesson      Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  module      Module?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@unique([userId, moduleId])
+}
+
+
+model Certificate {
+  id              String   @id @default(uuid())
+  userId          String
+  courseId        String
+  certificateUuid String   @unique
+  qrCodeUrl       String?
+  issuedAt        DateTime @default(now())
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String?
+  amount    Float
+  currency  String
+  provider  String
+  status    String
+  createdAt DateTime @default(now())
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
