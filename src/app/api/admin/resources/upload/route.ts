@@ -1,9 +1,7 @@
 import { getSessionUser } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { uploadToSupabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   const session = await getSessionUser();
@@ -25,20 +23,8 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Ensure the directory exists
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'resources');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    // Professional safe filename
-    const sanitizedTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const fileName = `${Date.now()}_${sanitizedTitle}_${file.name.replace(/\s/g, '_')}`;
-    const filePath = join(uploadsDir, fileName);
-
-    await writeFile(filePath, buffer);
-
-    const publicUrl = `/uploads/resources/${fileName}`;
+    // Upload directly to Supabase Storage and get its public URL
+    const publicUrl = await uploadToSupabase(buffer, file.name, file.type);
 
     const resource = await (prisma as any).resource.create({
       data: {
@@ -52,6 +38,6 @@ export async function POST(req: Request) {
     return NextResponse.json(resource);
   } catch (err: any) {
     console.error('Resource upload failure:', err);
-    return NextResponse.json({ error: 'Upload failed. Please try again.' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Upload failed. Please try again.' }, { status: 500 });
   }
 }
