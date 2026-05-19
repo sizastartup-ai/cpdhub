@@ -674,10 +674,10 @@ body {
   position: relative;
   background-color: var(--bg-primary);
   background-image: 
-    radial-gradient(circle at center, rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.98)),
-    url('/images/africa-bg.png');
-  background-size: cover;
-  background-position: center;
+    radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at center, rgba(15, 23, 42, 0.5) 0%, var(--bg-primary) 100%);
+  /* Removed image properties */
   background-attachment: fixed;
   overflow: hidden;
 }
