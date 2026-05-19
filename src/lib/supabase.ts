@@ -37,7 +37,7 @@ export async function uploadToSupabase(
       // Duplicating or upserting if needed. True to overwrite, false to fail if exists.
       'x-upsert': 'true',
     },
-    body: fileBuffer,
+    body: new Uint8Array(fileBuffer),
   });
 
   if (!response.ok) {
